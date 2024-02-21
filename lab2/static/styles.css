@@ -1,0 +1,58 @@
+* {
+box-sizing: border-box;
+margin: 0px;
+padding: 0px;
+}
+
+:root {
+  --color-bg: #011627;
+  --color-fg: #FF3366;
+  --color-selected: #4F86C6;
+  --color-flag: #83B692;
+  --color-mine: #D5CFE1;
+}
+
+body {
+  background: var(--color-selected);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+form {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+}
+
+input, button {
+  background-color: var(--color-mine);
+  color: var(--color-fg);
+  font-size: xxx-large;
+  font-style: bold;
+  width: 80vw;
+  height: 23.33vh;
+  padding: 10px;
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 5%;
+  cursor: pointer;
+}
+
+.fas {font-size: 40px;}
+
+input:hover, button:hover {
+  background-color: var(--color-flag);
+  color: var(--color-bg);
+}

@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- this is maybe what your supposed to do for icons? -->
+  <script src="https://kit.fontawesome.com/65c38dc4c6.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="static/styles.css">
+  <!-- https://webaim.org/resources/contrastchecker/ This is large text (i hope) -->
+</head>
+<body>
+    <div class="form">
+    <form action="" method="post">
+        <!-- REMOVE BREAK TAG -->
+        <input type="text" name="username" placeholder="Enter username" ><br>
+        <!-- <input type="password" name="password" placeholder="Enter password"><br/> -->
+        <div class="password-container">
+            <input type="password" name="password" placeholder="Passwawdord" id="password" required>
+            <span class="toggle-password" onclick="togglePasswordVisibility()">
+                <!-- Font Awesome eye icon, you can replace it with your preferred icon library -->
+                <i class="fas fa-eye-slash"></i>
+            </span>
+        </div>
+        <button name="mode" value="login">Login</button>
+        <button name="mode" value="register">Register</button>
+    </form>
+    </div>
+    <script>
+        function togglePasswordVisibility() {
+            var passwordField = document.getElementById("password");
+            // this seems to be the way that works for all browsers, might break password managers 
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+            } else {
+                passwordField.type = "password";
+            }
+            // change the icon
+            var icon = document.querySelector(".toggle-password i");
+            console.log(icon);
+            // just swap them
+            icon.classList.toggle("fa-eye-slash");
+            icon.classList.toggle("fa-eye");
+        }
+    </script>
+</body>
+</html> 
