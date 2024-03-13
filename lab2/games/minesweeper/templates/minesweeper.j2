@@ -9,16 +9,14 @@
                 box-sizing: border-box;
             }
 
-        
-            /* I know its suboptimal, but it at least meets the critera of themeing the website, will fix */
             :root {
-                --color-bg: 1, 22, 39;
-                --color-fg: 255, 51, 102;
-                --color-selected: 79, 134, 198;
-                --color-flag: 131, 182, 146;
-                --color-mine: 213, 207, 225;
+                --color-bg: 119, 33, 138;
+                --color-fg: 255, 255, 255;
+                --color-selected: 53, 53, 53;
+                --color-mine: 126, 27, 27, 0.75;
+                --color-flag: 0, 128, 0;
             }
-            
+
             body.maincontainer {
                 display: flex;
                 flex-direction: column;
@@ -146,9 +144,9 @@
                 inset: 0;
                 background: linear-gradient(rgba(var(--color-mine)) 50%, rgba(var(--color-flag)));
             }
+         
         </style>
     </head>
-
     <body class="maincontainer">
         <header class="scoreboard">
             <section id="timer">0</section>
@@ -218,7 +216,10 @@
                  * @param rows number of rows in the game
                  * @param cols number of columns in the game
                  */
-                constructor(rows, cols){
+                constructor(rows, cols) {
+                    // call the post method to make a game on the server
+                    // have data in the body of the post request
+                    console.log("CONSTRUCTOR called");
                     this.#numMines = 0;
                     this.#startTime = 0;
                     this.#board = []
@@ -229,19 +230,59 @@
                         }
                         this.#board.push(r);
                     }
+                    this.#resetBoard().then((json) => {
+                        console.log("RESET BOARD CALLED");
+                        console.log("DATA", json);
+                        // json["board"] = (0, 0)": -1
+                                        //"(0, 1)": -1
+                                        //"(0, 2)": -1
 
-                    this.#resetBoard();
-                }
-                #resetBoard() {
-
-                    this.#score = this.rows*this.cols;
-                    
-                    // Reset the board to zeros
-                    for( let row = 0; row < this.rows; row++ ){
-                        for( let col = 0; col < this.cols; col++ ){
-                            this.#board[row][col] = 0;
+                        // loop over all rows and columns and set the board to the board in the json
+                        for (let row = 0; row < this.rows; row++) {
+                            for (let col = 0; col < this.cols; col++) {
+                                let lookup_str = row + ", " + col;
+                                console.log("Lookup str", lookup_str);
+                                // BREAKS ON NON 10x10 INPUTS
+                                console.log("Lookup value", json["data"]['value'][lookup_str]);
+                                this.#board[row][col] = json["data"]['value'][lookup_str];
+                            }
                         }
-                    }
+                        this.#score = json["data"]["score"];
+                        console.log("SCORE", this.#score);
+                    })
+                }
+
+                #resetBoard() {
+                    console.log("RESET BOARD");
+
+                    let _params = new URLSearchParams(window.location.search)
+                    console.log("PARAMS RESET BOARD", window.location.search, _params.get('id'))
+                    let promise1 = new Promise(async (resolve) => {
+                        // use URLSearchParams to get the query parameters
+                        
+                        let result = await fetch('/games/minesweeper/game?id=' + _params.get('id'), {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                "action": "board",
+                                "data": "" // just get the entire board
+                            })
+                            })
+                        let json = await result.json()
+                        resolve(json);
+                    });
+                    console.log("RETURNING FROM RESET BOARD");
+                    return promise1; 
+
+                    //let json = await board_response.json()
+                    
+                    //console.log("Set score to", json)
+
+                    //this.#score = parseInt(json["score"])
+                    
+
 
                     // Place mines and calculate board spaces
                     for( let row = 0; row < this.rows; row++ ){
@@ -453,15 +494,17 @@
             let board = null;           // The parent board graphical element
             let logic = null;           // the Minesweeper logic object
 
-
             function init(){
                 let params = new URLSearchParams(window.location.search)
-                
+                console.log("PARAMS", window.location.search, params.get('id'))
                 // Defaults to 10 rows and 10 columns
                 let NUM_ROWS = params.get('rows') || 10;
                 let NUM_COLS = params.get('cols') || 10;
+                let game_id = params.get('id');
 
+                console.log("INIT called")
                 logic = new MineSweeper(NUM_ROWS, NUM_COLS);
+                //logic.#resetBoard(); now called in the constructor
 
                 // Set and populate the graphical board
                 board = document.getElementById('board');
@@ -489,8 +532,9 @@
                     document.getElementById('timer').textContent = Math.floor(logic.time/1000)
                 }, 1000)
 
-                logic.startGame()
+                //logic.startGame()
             }
+
             function handleButtonClick(event){
                 // Left Clicks only
                 if( event.buttons != 1 ){
