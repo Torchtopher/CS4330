@@ -211,6 +211,7 @@
                     return MineSweeper.#MINE;
                 }
 
+
                 /**
                  * Create a populating MineSweeper board
                  * @param rows number of rows in the game
@@ -230,37 +231,39 @@
                         }
                         this.#board.push(r);
                     }
+                    let obj = this;
                     this.#resetBoard().then((json) => {
-                        console.log("RESET BOARD CALLED");
-                        console.log("DATA", json);
-                        // json["board"] = (0, 0)": -1
-                                        //"(0, 1)": -1
-                                        //"(0, 2)": -1
-
-                        // loop over all rows and columns and set the board to the board in the json
-                        for (let row = 0; row < this.rows; row++) {
-                            for (let col = 0; col < this.cols; col++) {
-                                let lookup_str = row + ", " + col;
-                                console.log("Lookup str", lookup_str);
-                                // BREAKS ON NON 10x10 INPUTS
-                                console.log("Lookup value", json["data"]['value'][lookup_str]);
-                                this.#board[row][col] = json["data"]['value'][lookup_str];
-                            }
-                        }
-                        this.#score = json["data"]["score"];
-                        console.log("SCORE", this.#score);
+                        obj.#graphics_reset(json);
                     })
+                }
+
+                #graphics_reset(json) {
+                    console.log("RESET BOARD CALLED");
+                    console.log("DATA", json);
+                    // json["board"] = (0, 0)": -1
+                                    //"(0, 1)": -1
+                                    //"(0, 2)": -1
+
+                    // loop over all rows and columns and set the board to the board in the json
+                    for (let row = 0; row < this.rows; row++) {
+                        for (let col = 0; col < this.cols; col++) {
+                            let lookup_str = row + ", " + col;
+                            //console.log("Lookup str", lookup_str);
+                            // BREAKS ON NON 10x10 INPUTS
+                            //console.log("Lookup value", json["data"]['value'][lookup_str]);
+                            this.#board[row][col] = json["data"]['value'][lookup_str];
+                        }
+                    }
+                    this.#score = json["data"]["score"];
+                    this.#gameOver = json["data"]["game_over"];
+                    console.log("SCORE", this.#score);
+                    console.log("GAME OVER", this.#gameOver);
                 }
 
                 #resetBoard() {
                     console.log("RESET BOARD");
-
-                    let _params = new URLSearchParams(window.location.search)
-                    console.log("PARAMS RESET BOARD", window.location.search, _params.get('id'))
-                    let promise1 = new Promise(async (resolve) => {
-                        // use URLSearchParams to get the query parameters
-                        
-                        let result = await fetch('/games/minesweeper/game?id=' + _params.get('id'), {
+                    let promise1 = new Promise(async (resolve) => {                        
+                        let result = await fetch('/games/minesweeper/game?id=' + params.get('id'), {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -275,45 +278,6 @@
                     });
                     console.log("RETURNING FROM RESET BOARD");
                     return promise1; 
-
-                    //let json = await board_response.json()
-                    
-                    //console.log("Set score to", json)
-
-                    //this.#score = parseInt(json["score"])
-                    
-
-
-                    // Place mines and calculate board spaces
-                    for( let row = 0; row < this.rows; row++ ){
-                        for( let col = 0; col < this.cols; col++ ){
-                            let isMine = Math.random()*100 < this.#PERCENT_CHANCE_MINE;
-                            if( isMine ){
-                                this.#board[row][col] = -this.MINE;
-                                this.#numMines++;
-
-                                // Deduct one from adjacent spaces
-                                for( let r = row-1; r <= row+1; r++ ){
-                                    for( let c = col-1; c <= col+1; c++ ){
-                                        if( r >= 0 && r < this.rows && c >= 0 && c < this.cols){
-                                            if( this.#board[r][c] !== -this.MINE){
-                                                this.#board[r][c]--;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Set zeros to their covered values
-                    for( let row = 0; row < this.rows; row++ ){
-                        for( let col = 0; col < this.cols; col++ ){
-                            if( this.#board[row][col] == 0){
-                                this.#board[row][col] = MineSweeper.#COVERED_ZERO
-                            }
-                        }
-                    }
                 }
 
                 /**
@@ -325,20 +289,6 @@
                  * @return {boolean} true if the move was valid, false otherwise
                  */
                 pickSpace(row, col, toggleFlag = false){
-                    
-                    if( this.#gameOver ){
-                        return false;
-                    }
-                    
-                    if(row < 0 || row >= this.rows || col < 0 || col >= this.cols){
-                        return false;
-                    }
-
-                    // Already picked
-                    if( this.#board[row][col] >= 0 ){
-                        return false;
-                    }
-
                     // Toggle the Flag
                     if( toggleFlag ){
                         let mod = -MineSweeper.#FLAG_MOD;
@@ -354,29 +304,36 @@
                     if( this.#board[row][col] < -MineSweeper.#FLAG_MOD){
                         return false;
                     }
+                    let obj = this;
+                    let promise1 = new Promise(async (resolve) => {
+                        let result = await fetch('/games/minesweeper/game?id=' + params.get('id'), {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                "action": "pick",
+                                "data": {
+                                    "row": row,
+                                    "col": col} 
+                            })
+                            })
+                        let pick_json = await result.json()
 
+                        // don't care about the result and am just going to call resetBoard again
+                        this.#resetBoard().then((json) => {
+                            obj.#graphics_reset(json);
+                            updateBoard();
+                        })
+                        resolve(pick_json);
+                        // don't care about the result and am just going to call resetBoard again
+                        //this.#resetBoard().then((json) => {
+                        //    obj.#graphics_reset(json);
+                        //    updateBoard();
+                        //})
 
-                    this.#uncoverSpace(row, col)
-                    this.#score--;
-                    if( this.#board[row][col] == 0){
-                        // Hit a zero, uncover the spaces around this one
-                        for( let r = row-1; r <= row+1; r++ ){
-                            for( let c = col-1; c<=col+1; c++){
-                                this.pickSpace(r,c);
-                            }
-                        }
-                    }
-                    else if( this.#board[row][col] == this.MINE ){
-                        // Losing Free the score and time taken
-                        this.#gameOver = -1;
-                        this.#startTime = -1*this.time
-                    }
-                    
-                    // Winning!
-                    if( this.#score == this.#numMines ){
-                        this.#gameOver = 1;
-                        this.#startTime = -1*this.time
-                    }
+                    });
+                    return promise1;
                 }
 
                 #uncoverSpace(row, col){
@@ -493,9 +450,10 @@
 
             let board = null;           // The parent board graphical element
             let logic = null;           // the Minesweeper logic object
+            let params = new URLSearchParams(window.location.search);
 
             function init(){
-                let params = new URLSearchParams(window.location.search)
+                //let params = new URLSearchParams(window.location.search)
                 console.log("PARAMS", window.location.search, params.get('id'))
                 // Defaults to 10 rows and 10 columns
                 let NUM_ROWS = params.get('rows') || 10;
@@ -535,6 +493,50 @@
                 //logic.startGame()
             }
 
+            // Internal algorithm to update the board
+            function updateBoard(){
+                let spaces = board.getElementsByClassName('space')
+                for( let space of spaces ){
+                    let row = parseInt(space.getAttribute('data-row'))
+                    let col = parseInt(space.getAttribute('data-col'))        
+
+                    let value = logic.getSpace(row, col);
+                    
+                    // Add/Remove the correct CSS class to each space
+                    if( value >= 0 ){
+                        if( value === logic.MINE ){
+                            space.classList.add('mine')
+                        }
+                        else {
+                            space.classList.add('selected');
+                            space.textContent = value;
+                        }
+                    }
+                    else if( value == logic.FLAG){
+                        space.classList.add('flag')
+                    }
+                    else {
+                        space.classList.remove('flag')
+                    }
+                }
+
+                // Update score
+                document.getElementById('numOpenSpaces').textContent = logic.score;
+
+                // Update the Win/Lose Graphic
+                if( logic.gameOver ){
+                    let message = "You Win!";
+                    let scoreClass = 'win'
+                    let name = document.getElementById('name');
+                    if( logic.gameOver < 0 ){
+                        message = "You Lose!"
+                        scoreClass = 'lose';
+                    }
+                    name.textContent = message;
+                    document.getElementsByClassName('scoreboard')[0].classList.add(scoreClass);
+                }
+            }
+
             function handleButtonClick(event){
                 // Left Clicks only
                 if( event.buttons != 1 ){
@@ -543,50 +545,6 @@
 
                 if(logic.gameOver){
                     return false;
-                }
-
-                // Internal algorithm to update the board
-                function updateBoard(){
-                    let spaces = board.getElementsByClassName('space')
-                    for( let space of spaces ){
-                        let row = parseInt(space.getAttribute('data-row'))
-                        let col = parseInt(space.getAttribute('data-col'))        
-
-                        let value = logic.getSpace(row, col);
-                        
-                        // Add/Remove the correct CSS class to each space
-                        if( value >= 0 ){
-                            if( value === logic.MINE ){
-                                space.classList.add('mine')
-                            }
-                            else {
-                                space.classList.add('selected');
-                                space.textContent = value;
-                            }
-                        }
-                        else if( value == logic.FLAG){
-                            space.classList.add('flag')
-                        }
-                        else {
-                            space.classList.remove('flag')
-                        }
-                    }
-
-                    // Update score
-                    document.getElementById('numOpenSpaces').textContent = logic.score;
-
-                    // Update the Win/Lose Graphic
-                    if( logic.gameOver ){
-                        let message = "You Win!";
-                        let scoreClass = 'win'
-                        let name = document.getElementById('name');
-                        if( logic.gameOver < 0 ){
-                            message = "You Lose!"
-                            scoreClass = 'lose';
-                        }
-                        name.textContent = message;
-                        document.getElementsByClassName('scoreboard')[0].classList.add(scoreClass);
-                    }
                 }
 
                 // Get the row and column clicked on
@@ -598,11 +556,14 @@
                     clearTimeout(longPressTimer);    
                     event.target.removeEventListener('mouseup', this);
 
-                    let isValid = logic.pickSpace(row, col)
-                    if( isValid){
-                        event.target.classList.add('selected');
-                    }
-                    updateBoard();
+                    let isValid = logic.pickSpace(row, col).then((json) => {
+                        console.log("PICK SPACE", json);
+                        if(json["status"] == "OK"){
+                            event.target.classList.add('selected');
+                        }
+                        updateBoard();
+                    });
+
                 }
 
                 const LONG_PRESS_TIMER_MS = 250;

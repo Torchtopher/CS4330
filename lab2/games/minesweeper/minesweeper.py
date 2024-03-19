@@ -133,26 +133,31 @@ class MineSweeper:
     * @return {boolean} true if the move was valid, false otherwise
     '''
     def pickSpace(self, row, col, toggleFlag = False):
+        print(f"Picking space {row}, {col}")
         if self.__gameOver:
+            print("---Minesweeper.py - Pick space Game Over")
             return False
         
         if row < 0 or row >= self.getRows() or col < 0 or col >= self.getCols():
+            print("---Minesweeper.py - pick space out of bounds")            
             return False
         
         # already picked
         if self.__board[row][col] >= 0:
+            print("---Minesweeper.py - Pick space already picked")
             return False
         
         # toggle flag
         if toggleFlag:
-            mod = -MineSweeper.FLAG_MOD
+            mod = -MineSweeper.FLAG_MOD()
             if self.__board[row][col] < 0:
                 mod *= -1
             self.__board[row][col] += mod
             return True
         
-        # flagged spaces cannot be picked
-        if self.__board[row][col] < -MineSweeper.FLAG_MOD:
+        # flagged spaces cannot be picked (still handled on server)
+        if self.__board[row][col] < -MineSweeper.FLAG_MOD():
+            print("---Minesweeper.py - Pick space flagged")
             return False
         
         self.__uncoverSpace(row, col)
@@ -171,14 +176,15 @@ class MineSweeper:
         if self.__score == self.__numMines:
             self.__gameOver = 1
             self.__startTime = -1*self.time()
+        return True 
     
     def __uncoverSpace(self, row, col):
         if self.__board[row][col] >= 0:
             return self.__board[row][col]
         
         # remove the flag
-        if self.__board[row][col] < -MineSweeper.FLAG_MOD:
-            self.__board[row][col] += MineSweeper.FLAG_MOD
+        if self.__board[row][col] < -MineSweeper.FLAG_MOD():
+            self.__board[row][col] += MineSweeper.FLAG_MOD()
         
         # uncover the space
         if self.__board[row][col] < 0:

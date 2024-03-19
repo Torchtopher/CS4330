@@ -41,13 +41,13 @@ def handle_game(game=None):
         print(f"COLS: {request.form['cols']}")
         game = minesweeper(rows=int(request.form["rows"]), cols=int(request.form["cols"]))
         game.setName(name=str(request.form["name"]))
-        id = uuid.uuid4()
+        id = str(uuid.uuid4())
         # ------------------------------------------------------------------
         # JUST FOR TESTING, REMOVE ME LATER
-        id = "c64d1357-280f-4420-a9d7-ed0886b26ac5"
+        #id = "c64d1357-280f-4420-a9d7-ed0886b26ac5"
         running_games[id] = game
         print(f"ID: {id}")
-        redirect_url = url_for("games.handle_game", id=id)
+        redirect_url = url_for("games.handle_game", id=id, rows=request.form["rows"], cols=request.form["cols"], name=request.form["name"])
         return redirect(redirect_url)
         #return send_file("games/minesweeper/intro.html")
     
@@ -75,8 +75,9 @@ def handle_game(game=None):
             print(f"BOARD: {board}")
             return {"status": "OK", "data": {"value": board, "game_over": game_over, "score": score}} 
         elif act == "pick":
-            row, col = request.json['data']
+            row, col = request.json['data']["row"], request.json['data']["col"]
             was_legal = current_game.pickSpace(row, col)
+            print(f"WAS LEGAL: {was_legal}")
             # move was not legal, return an error
             if not was_legal:
                 return {"status": "ERROR", "data": "Move was not legal"}
