@@ -8,13 +8,20 @@
                 margin: 0;
                 box-sizing: border-box;
             }
-
+            <!--
             :root {
                 --color-bg: 119, 33, 138;
                 --color-fg: 255, 255, 255;
                 --color-selected: 53, 53, 53;
                 --color-mine: 126, 27, 27, 0.75;
                 --color-flag: 0, 128, 0;
+            } -->
+            :root {
+                --color-bg: 1, 22, 39;
+                --color-fg: 255, 51, 102;
+                --color-selected: 79, 134, 198;
+                --color-flag: 131, 182, 146;
+                --color-mine: 213, 207, 225;
             }
 
             body.maincontainer {
@@ -173,12 +180,11 @@
                  * -10: covered zero
                  * < -10: flagged equivalent of negative
                  */
-                #board              
+                #board
+                #localFlagBoard // for keeping track of flags client side since its just cosmetic       
 
-                #startTime          // ms
                 #gameOver           // 1 = win, -1 = lose, 0 = keep going
                 #numMines
-                
                 #score
                 #name
 
@@ -222,14 +228,15 @@
                     // have data in the body of the post request
                     console.log("CONSTRUCTOR called");
                     this.#numMines = 0;
-                    this.#startTime = 0;
                     this.#board = []
+                    this.#localFlagBoard = []
                     for( let row = 0; row < rows; row++ ){
                         let r = [];
                         for( let col = 0; col < cols; col++ ){
                             r.push(0);
                         }
                         this.#board.push(r);
+                        this.#localFlagBoard.push(r.slice());
                     }
                     let obj = this;
                     this.#resetBoard().then((json) => {
@@ -252,12 +259,16 @@
                             // BREAKS ON NON 10x10 INPUTS
                             //console.log("Lookup value", json["data"]['value'][lookup_str]);
                             this.#board[row][col] = json["data"]['value'][lookup_str];
-                        }
+                            // use local copy of flag board to keep track of flags
+                            if (this.#localFlagBoard[row][col] != 0) {
+                                this.#board[row][col] = this.#localFlagBoard[row][col];
+                            }
                     }
                     this.#score = json["data"]["score"];
                     this.#gameOver = json["data"]["game_over"];
                     console.log("SCORE", this.#score);
                     console.log("GAME OVER", this.#gameOver);
+                    }
                 }
 
                 #resetBoard() {
@@ -296,7 +307,8 @@
                             mod *= -1
                         }
 
-                        this.#board[row][col] += mod;                        
+                        this.#board[row][col] += mod;
+                        this.#localFlagBoard[row][col] = this.#board[row][col];                        
                         return true;
                     }
 
@@ -387,13 +399,6 @@
                 }
 
                 /**
-                 * Begins the game
-                 */ 
-                startGame() {
-                    this.#startTime = new Date().getTime();
-                }
-
-                /**
                  * @return number of columns in the game
                  */
                 get cols(){
@@ -426,11 +431,22 @@
                  * @return {int} seconds which have passed in the game
                  */
                 get time() {
-                    if( this.#startTime <= 0 ){
-                        return Math.abs(this.#startTime);
-                    }
-
-                    return new Date().getTime() - this.#startTime
+                    // request time from the server
+                    let timePromise = new Promise(async (resolve) => {
+                        let result = await fetch('/games/minesweeper/game?id=' + params.get('id'), {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                "action": "time",
+                                "data": "" // just get the entire board
+                            })
+                            })
+                        let json = await result.json()
+                        resolve(json);
+                    });
+                    return timePromise;
                 }
 
                 /**
@@ -487,10 +503,12 @@
 
                 // Updates the timer
                 setInterval(function(){
-                    document.getElementById('timer').textContent = Math.floor(logic.time/1000)
+                    logic.time.then((json) => {
+                        console.log("TIME", json);
+                        document.getElementById('timer').textContent = Math.floor(json["data"])
+                    })
                 }, 1000)
 
-                //logic.startGame()
             }
 
             // Internal algorithm to update the board
@@ -569,10 +587,16 @@
                 const LONG_PRESS_TIMER_MS = 250;
                 // Allow long press
                 let longPressTimer = setTimeout(function(){
-                    logic.pickSpace(row, col, true)  
+                    // let isValid = logic.pickSpace(row, col, true).then((json) => {
+                    //     console.log("PICK SPACE FLAG", json);
+                    //     if(json["status"] == "OK"){
+                    //     }
+                    //     updateBoard();
+                    //     event.target.removeEventListener('mouseup', pSpace);
+                    // });
+                    logic.pickSpace(row, col, true)
                     updateBoard()
                     
-                    event.target.removeEventListener('mouseup', pSpace);
                 }, LONG_PRESS_TIMER_MS)
 
                 // Set up long press cancelations (actual click or move out of space)

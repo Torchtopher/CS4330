@@ -26,7 +26,7 @@ games_page = Blueprint('games', "games.minesweeper",
                         template_folder='templates')
 
 # default to minesweeper
-@games_page.route('/', defaults={'game': 'minesweeper'})
+#@games_page.route('/', defaults={'game': 'minesweeper'})
 @games_page.route('/<game>/game', methods=['GET', 'POST', 'PUT'])
 def handle_game(game=None):
     if request.method == 'POST':
@@ -39,17 +39,14 @@ def handle_game(game=None):
         minesweeper: MS_t = games.minesweeper.factory()
         print(f"ROWS: {request.form['rows']}")
         print(f"COLS: {request.form['cols']}")
-        game = minesweeper(rows=int(request.form["rows"]), cols=int(request.form["cols"]))
-        game.setName(name=str(request.form["name"]))
+        new_game = minesweeper(rows=int(request.form["rows"]), cols=int(request.form["cols"]))
+        new_game.setName(name=str(request.form["name"]))
+        new_game.startGame()
         id = str(uuid.uuid4())
-        # ------------------------------------------------------------------
-        # JUST FOR TESTING, REMOVE ME LATER
-        #id = "c64d1357-280f-4420-a9d7-ed0886b26ac5"
-        running_games[id] = game
+        running_games[id] = new_game
         print(f"ID: {id}")
-        redirect_url = url_for("games.handle_game", id=id, rows=request.form["rows"], cols=request.form["cols"], name=request.form["name"])
+        redirect_url = url_for("games.handle_game", game=game, id=id, rows=request.form["rows"], cols=request.form["cols"], name=request.form["name"])
         return redirect(redirect_url)
-        #return send_file("games/minesweeper/intro.html")
     
     elif request.method == 'PUT':
         # print out url encoded id parameter
@@ -60,11 +57,13 @@ def handle_game(game=None):
         # print out json encoded action and data parameters
         print(f"ACTION: {request.json['action']}")
         act = request.json['action']
-        print(f'Running Games: {running_games}')
+        #print(f'Running Games: {running_games}')
         current_game: MS_t = running_games[request.args.get('id')] # id should be a uuid
         # return every space on the board 
         if act == "board":
             print("GETTING BOARD")
+            # print the board
+
             game_over = current_game.getGameOver()
             score = current_game.getScore()
             # get all the spaces into a dictionary of (row, col): public value
@@ -72,11 +71,19 @@ def handle_game(game=None):
             for r in range(current_game.getRows()):
                 for c in range(current_game.getCols()):
                     board[f"{r}, {c}"] = current_game.getSpace(r, c)
-            print(f"BOARD: {board}")
+                    print(f"{board[f'{r}, {c}' ]} ", end="")
+                print()
+            # format to print as the size of the board
+
             return {"status": "OK", "data": {"value": board, "game_over": game_over, "score": score}} 
         elif act == "pick":
             row, col = request.json['data']["row"], request.json['data']["col"]
-            was_legal = current_game.pickSpace(row, col)
+            try:
+                want_flag = request.json['data']["flag"]
+                print(f"WANT FLAG: {want_flag}")
+            except:
+                want_flag = False
+            was_legal = current_game.pickSpace(row, col, want_flag)
             print(f"WAS LEGAL: {was_legal}")
             # move was not legal, return an error
             if not was_legal:
@@ -84,12 +91,23 @@ def handle_game(game=None):
             space = current_game.getSpace(row, col)
             game_over = current_game.getGameOver()
             score = current_game.getScore()
+            board = {} 
+            for r in range(current_game.getRows()):
+                for c in range(current_game.getCols()):
+                    board[f"{r}, {c}"] = current_game.getSpace(r, c)
+                    print(f"{board[f'{r}, {c}' ]} ", end="")
+                print()
             return {"status": "OK", "data": {"value": space, "game_over": game_over, "score": score}}
         elif act == "space":
-            pass
+            # get public value of space
+            row, col = request.json['data']["row"], request.json['data']["col"]
+            space = current_game.getSpace(row, col)
+            game_over = current_game.getGameOver()
+            score = current_game.getScore()
         elif act == "score":
             return {"status": "OK", "data": current_game.getScore()}
         elif act == "time":
+            print(f"TIME: {current_game.time()}")
             return {"status": "OK", "data": current_game.time()}
         elif act == "name":
             return {"status": "OK", "data": current_game.getName()}
@@ -100,7 +118,6 @@ def handle_game(game=None):
         # fully render board here and then return it
         return render_template("minesweeper.j2")
 
-
     return f"hello {game}"
 
 app = Flask(__name__)
@@ -109,7 +126,7 @@ app.register_blueprint(games_page, url_prefix='/games')
 # add a route
 @app.route('/')
 def hello_world():
-    return 'Hello, World!'
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

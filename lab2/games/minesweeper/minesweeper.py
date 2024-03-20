@@ -1,5 +1,4 @@
 import random
-import itertools
 import datetime
 
 class MineSweeper:
@@ -13,46 +12,85 @@ class MineSweeper:
     
     @classmethod
     def FLAG_MOD(cls) -> int:
+        """Getter for the flag mod
+
+        Returns:
+            int: value of the flag mod
+        """
         return cls.__FLAG_MOD
 
-    '''
-    * @return {int} value representing a selectable space
-    '''
+
     @classmethod
     def OPEN(cls) -> int: 
+        """Returns the value of a open space
+
+        Returns:
+            int: constant
+        """
         return cls.__OPEN
 
-    '''
-    * @return {int} value representing a flag placemnt
-    '''
+
     @classmethod
     def FLAG(cls) -> int:
+        """Constant representing a flag
+
+        Returns:
+            int: value of constant representing a flag
+        """
         return cls.__FLAG
 
-    '''
-    * @return {int} value representing a mine
-    '''
+
     @classmethod
     def MINE(cls) -> int:
+        """
+        Returns:
+            int: value of constant representing a mine
+        """
         return cls.__MINE
 
+
     def getCols(self) -> int:
+        """getter for the number of columns
+
+        Returns:
+            int: number of columns in __board
+        """
         return len(self.__board[0])
 
     def getRows(self) -> int:
+        """getter for the number of rows
+
+        Returns:
+            int: number of rows in __board
+        """
         return len(self.__board)
 
     def getGameOver(self) -> int:
+        """getter for the game over status
+
+        Returns:
+            int: non zero if game is over
+        """
         return self.__gameOver
     
     def getScore(self) -> int:
+        """getter for the score
+
+        Returns:
+            int: current score
+        """
         return self.__score
     
     def time(self) -> int:
+        """getter for the time
+
+        Returns:
+            int: time since game started
+        """
         if self.__startTime <= 0:
             return abs(self.__startTime)
         
-        return (datetime.datetime.now() - self.__startTime).total_seconds()
+        return (datetime.datetime.now().timestamp() - self.__startTime)
     
     def getName(self) -> str:
         print("NAME NOT IMPLMENTED")
@@ -62,26 +100,21 @@ class MineSweeper:
         print("NAME SET NOT IMPLMENTED")
         pass
     
-    '''
-        * Create a populating MineSweeper board
-        * @param rows number of rows in the game
-        * @param cols number of columns in the game
-    '''
+
     def __init__(self, rows: int, cols: int):
-        '''
-        * 2D list
-        * 0-8: uncovered number of mines around space
-        * 9: uncovered mine
-        * negative: covered equivalent
-        * -10: covered zero
-        * < -10: flagged equivalent of negative
-        '''
-        self.__gameOver = 0 # 1 = win, -1 = lose, 0 = keep going
-        self.__score = 0
-        self.__name = None
+        """Create a populating MineSweeper board
+
+        Args:
+            rows (int): number of rows in the game
+            cols (int): number of columns in the game
+        """
+
+        self.__gameOver: int = 0 # 1 = win, -1 = lose, 0 = keep going
+        self.__score: int = 0
+        self.__name: str = None
         self.__PERCENT_CHANCE_MINE: int = 20
-        self.__numMines = 0 
-        self.__startTime = 0
+        self.__numMines: int = 0 
+        self.__startTime: int = 0
         self.__board: list[list[int]] = []
  
         emptyRow = [0 for i in range(cols)]
@@ -91,6 +124,10 @@ class MineSweeper:
         self.__resetBoard()
 
     def __resetBoard(self):
+        """Reset the board to a new game state
+        """
+        print(f"FLAG MOD: {MineSweeper.FLAG_MOD()}, OPEN: {MineSweeper.OPEN()}, FLAG: {MineSweeper.FLAG()}, MINE: {MineSweeper.MINE()}")
+
         #print(self.__board)
         self.__score = self.getRows() * self.getCols()
         # reset board to all zeros
@@ -124,15 +161,17 @@ class MineSweeper:
             print(row)
         #print(self.__board)
     
-    '''
-    * Picks a space and enforces rules of MineSweeper
-    * 
-    * @param {int} row row to select (start at zero)
-    * @param {int} col column to select (start at zero)
-    * @param {bool} toogleFlag true to toggle a flag placement
-    * @return {boolean} true if the move was valid, false otherwise
-    '''
-    def pickSpace(self, row, col, toggleFlag = False):
+    def pickSpace(self, row, col, toggleFlag = False) -> bool:
+        """Picks a space and enforces rules of MineSweeper
+
+        Args:
+            row (_type_): row to select (start at zero)
+            col (_type_): column to select (start at zero)
+            toggleFlag (bool, optional): true to toggle flag placement. Defaults to False.
+
+        Returns:
+            bool: true if the move was valid, false otherwise 
+        """
         print(f"Picking space {row}, {col}")
         if self.__gameOver:
             print("---Minesweeper.py - Pick space Game Over")
@@ -196,21 +235,28 @@ class MineSweeper:
         
         return self.__board[row][col]
 
-    ''' 
-    * Get the status of a space
-    * @param {int} row the row to query (starting at zero)
-    * @param {int} col the column to query (starting at zero)
-    * @return {int} value at (row,col) if uncovered, OPEN if covered or invalid
-    '''
-    def getSpace(self, row, col):
+    def getSpace(self, row: int, col: int) -> int:
+        """Get the status of a space
+
+        Args:
+            row (int): the row to query (starting at zero)
+            col (int): the column to query (starting at zero)
+
+        Returns:
+            int: value at (row,col) if uncovered, OPEN if covered or invalid
+        """
+        # print constants for debugging
+        print(f"Row {row}, Col {col} value: {self.__board[row][col]}")
         if (row < 0 or row >= self.getRows() or col < 0 or col >= self.getCols()):
             return MineSweeper.OPEN()
 
         if (self.__gameOver):
+            print(f"=======Game Over at {row}, {col}")
             self.__uncoverSpace(row, col)
             return self.__board[row][col]
 
         if (self.__board[row][col] < -MineSweeper.FLAG_MOD()):
+            print(f"=======Flagged space at {row}, {col}")
             return MineSweeper.FLAG()
         
         if (self.__board[row][col] < 0):
@@ -219,7 +265,9 @@ class MineSweeper:
         return self.__board[row][col]
     
     def startGame(self) -> None:
-        self.__startTime = datetime.datetime.now()
+        """Starts the clock for the game
+        """
+        self.__startTime = datetime.datetime.now().timestamp()
 
 
                 
