@@ -1,0 +1,35 @@
+1.
+sqlite3 users.db
+
+2.
+CREATE TABLE users (
+	id int AUTO_INCREMENT PRIMARY KEY,
+   	username varchar(255) NOT NULL,
+	password varchar(255) NOT NULL,
+	salt varchar(255) NOT NULL
+);
+
+'''
+    { username: “bsea”, password: “PANDAS!”, salt: “BAMBOO” }
+    { username: “hubbard”, password: “Gully”, salt: “Battle” }
+    { username: “cantwell”, password: "HCIwoot”, salt: “mices”}
+    { username: “happer”, password: “ateapples”, salt: “mooses” }
+'''
+3.
+INSERT INTO users (username, password, salt) VALUES ('bsea', 'PANDAS!', 'BAMBOO');
+INSERT INTO users (username, password, salt) VALUES ('hubbard', 'Gully', 'Battle');
+INSERT INTO users (username, password, salt) VALUES ('cantwell', 'HCIwoot', 'mices');
+INSERT INTO users (username, password, salt) VALUES ('happer', 'ateapples', 'mooses');
+
+4.
+SELECT * FROM users;
+
+5.
+CREATE TABLE profiles (
+	id int AUTO_INCREMENT PRIMARY KEY,
+   	userid int NOT NULL,
+	color varchar(255) NOT NULL,
+	hand varchar(255) NOT NULL,
+	dept varchar(255) NOT NULL,
+	group varchar(255) NOT NULL
+);

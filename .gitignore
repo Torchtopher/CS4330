@@ -1,2 +1,5 @@
 lab2/lab2env
 __pycache__
+venv
+venv/
+venv*
