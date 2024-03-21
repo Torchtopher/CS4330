@@ -31,5 +31,23 @@ CREATE TABLE profiles (
 	color varchar(255) NOT NULL,
 	hand varchar(255) NOT NULL,
 	dept varchar(255) NOT NULL,
-	group varchar(255) NOT NULL
+	[group] int NOT NULL DEFAULT 5
 );
+
+6.
+insert into profiles(userid, color, hand, dept) values ((SELECT rowid FROM users WHERE username='happer'),'red', 'left', 'science');
+insert into profiles(userid, color, hand, dept, [group]) values ((SELECT rowid FROM users WHERE username='hubbard'),'red', 'right', 'math', 20);
+insert into profiles(userid, color, hand, dept, [group]) values ((SELECT rowid FROM users WHERE username='bsea'),'green', 'right', 'ecs', 22);
+insert into profiles(userid, color, hand, dept, [group]) values ((SELECT rowid FROM users WHERE username='cantwell'),'purple', 'ambi', 'humanities', 12);
+
+7.
+SELECT color, dept FROM profiles;
+
+8.
+SELECT * FROM profiles WHERE hand='right';
+
+9. 
+SELECT * FROM profiles INNER JOIN users ON profiles.userid = users.rowid WHERE length(password) > 6 AND hand='right';
+
+10.
+SELECT username FROM profiles INNER JOIN users ON profiles.userid = users.rowid WHERE substr(salt,1,1)='B' AND [group] > 10 ORDER BY username ASC;
